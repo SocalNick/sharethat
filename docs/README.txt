@@ -13,14 +13,14 @@ Setting Up Your VHOST
 
 The following is a sample VHOST you might want to consider for your project.
 
-<VirtualHost *:80>
-   DocumentRoot "/Users/ralphschindler/Projects/NOLASnowball/public"
-   ServerName NOLASnowball.local
+<VirtualHost *:10088>
+   DocumentRoot "/Users/ncalugar/workspace/sharethat/public"
+   ServerName sharethat.local
 
    # This should be omitted in the production environment
    SetEnv APPLICATION_ENV development
     
-   <Directory "/Users/ralphschindler/Projects/NOLASnowball/public">
+   <Directory "/Users/ncalugar/workspace/sharethat/public">
        Options Indexes MultiViews FollowSymLinks
        AllowOverride All
        Order allow,deny

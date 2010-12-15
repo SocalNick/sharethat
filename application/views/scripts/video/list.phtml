@@ -1,0 +1,22 @@
+<?php
+
+$videos = $this->videos;
+
+?>
+
+<p>
+    <a href="<?php echo $this->url(array('action' => 'create')); ?>">Add New Video</a>
+</p>
+
+
+<?php if ($videos): foreach ($videos as $video): ?>
+    ID<?php echo $video->getId() ?>: 
+    <a href="<?php echo $this->url(array('action' => 'edit', 'id' => $video->getId())); ?>">
+        <?php echo $video->getName(); ?>
+    </a>
+    - 
+    <a href="<?php echo $this->url(array('action' => 'delete', 'id' => $video->getId())); ?>">
+        delete
+    </a>
+    <br />
+<?php endforeach; endif; ?>

@@ -26,7 +26,7 @@ Resulting Stand Controller & Views
         protected $entityManager;
 
         /**
-         * @var NOLASnowball\Entity\Repository\StandRepository
+         * @var ShareThat\Entity\Repository\StandRepository
          */
         protected $standRepository;
 
@@ -34,7 +34,7 @@ Resulting Stand Controller & Views
         {
             $this->doctrine = Zend_Registry::get('doctrine');
             $this->entityManager = $this->doctrine->getEntityManager();
-            $this->standRepository = $this->entityManager->getRepository('\NOLASnowball\Entity\Stand');
+            $this->standRepository = $this->entityManager->getRepository('\ShareThat\Entity\Stand');
         }
 
         public function indexAction()
@@ -52,7 +52,7 @@ Resulting Stand Controller & Views
         {
             $form = new Application_Form_Stand();
             if ($this->getRequest()->isPost() && $form->isValid($_POST)) {
-                $stand = new \NOLASnowball\Entity\Stand();
+                $stand = new \ShareThat\Entity\Stand();
         
                 $this->_setEntityValues($stand, $form->getValues());
         
@@ -108,7 +108,7 @@ Resulting Stand Controller & Views
             $this->view->form = $form;
         }
 
-        protected function _setEntityValues(\NOLASnowball\Entity\Stand $stand, Array $values)
+        protected function _setEntityValues(\ShareThat\Entity\Stand $stand, Array $values)
         {
             $stand->setName($values['name']);
             $stand->setAddress($values['address']);
@@ -167,7 +167,7 @@ Resulting Stand Controller & Views
 
     # forms/Stand.php alteration
     
-    public function setDefaultsFromEntity(\NOLASnowball\Entity\Stand $stand)
+    public function setDefaultsFromEntity(\ShareThat\Entity\Stand $stand)
     {
         $values = array(
             'id' => $stand->getId(),

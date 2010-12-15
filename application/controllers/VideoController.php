@@ -1,6 +1,6 @@
 <?php
 
-class StandController extends Zend_Controller_Action
+class VideoController extends Zend_Controller_Action
 {
 
     /**
@@ -14,15 +14,15 @@ class StandController extends Zend_Controller_Action
     protected $entityManager;
 
     /**
-     * @var NOLASnowball\Entity\Repository\StandRepository
+     * @var ShareThat\Entity\Repository\VideoRepository
      */
-    protected $standRepository;
+    protected $videoRepository;
 
     public function init()
     {
         $this->doctrine = Zend_Registry::get('doctrine');
         $this->entityManager = $this->doctrine->getEntityManager();
-        $this->standRepository = $this->entityManager->getRepository('\NOLASnowball\Entity\Stand');
+        $this->videoRepository = $this->entityManager->getRepository('\ShareThat\Entity\Video');
     }
 
     public function indexAction()
@@ -32,25 +32,25 @@ class StandController extends Zend_Controller_Action
 
     public function listAction()
     {
-        $stands = $this->standRepository->findAll();
+        $videos = $this->videoRepository->findAll();
         
-        $this->view->stands = $stands;
+        $this->view->videos = $videos;
     }
 
     public function createAction()
     {
-        $form = new Application_Form_Stand();
+        $form = new Application_Form_Video();
 
         if ($this->getRequest()->isPost() && $form->isValid($_POST)) {
-            $stand = new \NOLASnowball\Entity\Stand();
+            $video = new \ShareThat\Entity\Video();
 
-            $this->standRepository->saveStand($stand, $form->getValues());
+            $this->videoRepository->saveVideo($video, $form->getValues());
 
             $this->entityManager->flush();
     
-            $this->_helper->flashMessenger->addMessage('Stand saved.');
+            $this->_helper->flashMessenger->addMessage('Video saved.');
             
-            return $this->_redirect('/stand/list');
+            return $this->_redirect('/video/list');
         }
 
         $this->view->form = $form;
@@ -64,18 +64,18 @@ class StandController extends Zend_Controller_Action
             throw new Exception('Id must be provided for the delete action');
         }
 
-        $this->standRepository->removeStand($id);
+        $this->videoRepository->removeVideo($id);
         
         $this->entityManager->flush();
 
-        $this->_helper->flashMessenger->addMessage('Stand deleted.');
+        $this->_helper->flashMessenger->addMessage('Video deleted.');
         
-        return $this->_redirect('/stand/list');
+        return $this->_redirect('/video/list');
     }
 
     public function editAction()
     {
-        $form = new Application_Form_Stand();
+        $form = new Application_Form_Video();
 
         $id = $this->getRequest()->getParam('id');
         
@@ -83,19 +83,19 @@ class StandController extends Zend_Controller_Action
             throw new Exception('Id must be provided for the edit action');
         }
     
-        $stand = $this->standRepository->findOneBy(array('id' => $id));
+        $video = $this->videoRepository->findOneBy(array('id' => $id));
 
         if ($this->getRequest()->isPost() && $form->isValid($_POST)) {
-            $this->standRepository->saveStand($stand, $form->getValues());
+            $this->videoRepository->saveVideo($video, $form->getValues());
             
             $this->entityManager->flush();
     
-            $this->_helper->flashMessenger->addMessage('Stand saved.');
+            $this->_helper->flashMessenger->addMessage('Video saved.');
             
-            return $this->_redirect('/stand/list');
+            return $this->_redirect('/video/list');
         }
 
-        $form->setDefaultsFromEntity($stand); // pass values to form
+        $form->setDefaultsFromEntity($video); // pass values to form
 
         $this->view->form = $form;
     }
