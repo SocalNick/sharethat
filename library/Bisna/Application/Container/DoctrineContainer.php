@@ -36,6 +36,11 @@ class DoctrineContainer
      * @var string Default DBAL Connection name. 
      */
     public $defaultConnection = 'default';
+    
+    /**
+     * @var string Default MongoDB Connection name. 
+     */
+    public $defaultMongoDBConnection = 'default';
 
     /**
      * @var default Default Cache Instance name.
@@ -61,6 +66,11 @@ class DoctrineContainer
      * @var array Available DBAL Connections.
      */
     private $connections = array();
+    
+    /**
+     * @var array Available MongoDB Connections.
+     */
+    private $mongoDBConnections = array();
 
     /**
      * @var array Available Cache Instances.
@@ -71,6 +81,11 @@ class DoctrineContainer
      * @var array Available ORM EntityManagers.
      */
     private $entityManagers = array();
+    
+    /**
+     * @var array Available ODM DocumentManagers.
+     */
+    private $documentManagers = array();
 
     
     /**
@@ -85,6 +100,12 @@ class DoctrineContainer
 
         // Defining default DBAL Connection name
         $this->defaultConnection = $dbalConfig['defaultConnection'];
+        
+        // Defining MongoDB configuration
+        $mongodbConfig = $this->prepareMongoDBConfiguration($config);
+
+        // Defining default MongoDB Connection name
+        $this->defaultMongoDBConnection = $mongodbConfig['defaultConnection'];
 
         // Defining Cache configuration
         $cacheConfig = array();
@@ -119,6 +140,7 @@ class DoctrineContainer
         // Defining Doctrine Context configuration
         $this->configuration = array(
             'dbal'  => $dbalConfig['connections'],
+            'mongodb' => $mongodbConfig['connections'],
             'cache' => $cacheConfig['instances'],
             'orm'   => $ormConfig['entityManagers'],
             'odm'	=> $odmConfig['documentManagers'],
@@ -168,6 +190,52 @@ class DoctrineContainer
         } else {
             $connections = array(
                 $defaultConnectionName => array_replace_recursive($defaultConnection, $dbalConfig)
+            );
+        }
+
+        return array(
+            'defaultConnection' => $defaultConnectionName,
+            'connections'       => $connections
+        );
+    }
+    
+	/**
+     * Prepare MongoDB Connections configurations.
+     *
+     * @param array $config Doctrine Container configuration
+     *
+     * @return array
+     */
+    private function prepareMongoDBConfiguration(array $config = array())
+    {
+        $mongodbConfig = $config['mongodb'];
+        $defaultConnectionName = isset($mongodbConfig['defaultConnection'])
+            ? $mongodbConfig['defaultConnection'] : $this->defaultConnection;
+
+        unset($mongodbConfig['defaultConnection']);
+
+        $defaultConnection = array(
+            'eventManagerClass' => 'Doctrine\Common\EventManager',
+            'eventSubscribers'   => array(),
+            'configurationClass' => 'Doctrine\MongoDB\Configuration',
+            'sqlLoggerClass'    => null,
+            'parameters'          => array(
+                'server'			=> 'localhost',
+            ),
+        );
+
+        $connections = array();
+
+        if (isset($mongodbConfig['connections'])) {
+            $configConnections = $mongodbConfig['connections'];
+
+            foreach ($configConnections as $name => $connection) {
+                $name = isset($connection['id']) ? $connection['id'] : $name;
+                $connections[$name] = array_replace_recursive($defaultConnection, $connection);
+            }
+        } else {
+            $connections = array(
+                $defaultConnectionName => array_replace_recursive($defaultConnection, $mongodbConfig)
             );
         }
 
@@ -353,6 +421,36 @@ class DoctrineContainer
 
         return $this->connections[$connName];
     }
+    
+	/**
+     * Retrieve MongoDB Connection based on its name. If no argument is provided,
+     * it will attempt to get the default Connection.
+     * If MongoDB Connection name could not be found, NameNotFoundException is thrown.
+     *
+     * @throws Bisna\Application\Exception\NameNotFoundException
+     *
+     * @param string $connName Optional MongoDB Connection name
+     *
+     * @return Doctrine\MongDB\Connection MongDB Connection
+     */
+    public function getMongoDBConnection($connName = null)
+    {
+        $connName = $connName ?: $this->defaultMongoDBConnection;
+
+        // Check if MongDB Connection has not yet been initialized
+        if ( ! isset($this->mongoDBConnections[$connName])) {
+            // Check if MongDB Connection is configured
+            if ( ! isset($this->configuration['mongodb'][$connName])) {
+                throw new Exception\NameNotFoundException("Unable to find Doctrine MongDB Connection '{$connName}'.");
+            }
+
+            $this->mongoDBConnections[$connName] = $this->startMongoDBConnection($this->configuration['mongodb'][$connName]);
+
+            unset($this->configuration['mongodb'][$connName]);
+        }
+
+        return $this->mongoDBConnections[$connName];
+    }
 
     /**
      * Retrieve Cache Instance based on its name. If no argument is provided,
@@ -413,6 +511,36 @@ class DoctrineContainer
         
         return $this->entityManagers[$emName];
     }
+    
+	/**
+     * Retrieve ODM MongoDB DocumentManager based on its name. If no argument provided,
+     * it will attempt to get the default DocumentManager.
+     * If ODM DocumentManager name could not be found, NameNotFoundException is thrown.
+     *
+     * @throws Bisna\Application\Exception\NameNotFoundException
+     *
+     * @param string $dmName Optional ODM DocumentManager name
+     *
+     * @return Doctrine\ODM\MongoDB\DocumentManager ODM MongoDB DocumentManager
+     */
+    public function getDocumentManager($dmName = null)
+    {
+        $dmName = $dmName ?: $this->defaultDocumentManager;
+
+        // Check if ODM Document Manager has not yet been initialized
+        if ( ! isset($this->documentManagers[$dmName])) {
+            // Check if ODM DocumentManager is configured
+            if ( ! isset($this->configuration['odm'][$dmName])) {
+                throw new Exception\NameNotFoundException("Unable to find Doctrine ODM DocumentManager '{$dmName}'.");
+            }
+
+            $this->documentManagers[$dmName] = $this->startODMDocumentManager($this->configuration['odm'][$dmName]);
+
+            unset($this->configuration['odm'][$dmName]);
+        }
+        
+        return $this->documentManagers[$dmName];
+    }
 
     /**
      * Initialize the DBAL Connection.
@@ -427,6 +555,22 @@ class DoctrineContainer
             $config['parameters'],
             $this->startDBALConfiguration($config),
             $this->startDBALEventManager($config)
+        );
+    }
+    
+	/**
+     * Initialize the MongoDB Connection.
+     *
+     * @param array $config MongoDB Connection configuration.
+     *
+     * @return Doctrine\MongoDB\Connection
+     */
+    private function startMongoDBConnection(array $config = array())
+    {
+        return \Doctrine\MongoDB\DriverManager::getConnection(
+            $config['parameters'],
+            $this->startMongoDBConfiguration($config),
+            $this->startMongoDBEventManager($config)
         );
     }
 
@@ -450,6 +594,27 @@ class DoctrineContainer
 
         return $configuration;
     }
+    
+	/**
+     * Initialize the MongoDB Configuration.
+     *
+     * @param array $config MongoDB Connection configuration.
+     *
+     * @return Doctrine\MongoDB\Configuration
+     */
+    private function startMongoDBConfiguration(array $config = array())
+    {
+        $configClass = $config['configurationClass'];
+        $configuration = new $configClass();
+
+        // SQL Logger configuration
+        if ( ! empty($config['sqlLoggerClass'])) {
+            $sqlLoggerClass = $config['sqlLoggerClass'];
+            $configuration->setSQLLogger(new $sqlLoggerClass());
+        }
+
+        return $configuration;
+    }
 
     /**
      * Initialize the EventManager.
@@ -459,6 +624,26 @@ class DoctrineContainer
      * @return Doctrine\Common\EventManager
      */
     private function startDBALEventManager(array $config = array())
+    {
+        $eventManagerClass = $config['eventManagerClass'];
+        $eventManager = new $eventManagerClass();
+
+        // Event Subscribers configuration
+        foreach ($config['eventSubscribers'] as $subscriber) {
+            $eventManager->addEventSubscriber(new $subscriber());
+        }
+
+        return $eventManager;
+    }
+    
+	/**
+     * Initialize the EventManager.
+     *
+     * @param array $config MongoDB Connection configuration.
+     *
+     * @return Doctrine\Common\EventManager
+     */
+    private function startMongoDBEventManager(array $config = array())
     {
         $eventManagerClass = $config['eventManagerClass'];
         $eventManager = new $eventManagerClass();
@@ -542,6 +727,21 @@ class DoctrineContainer
             $this->startORMConfiguration($config)
         );
     }
+    
+	/**
+     * Initialize ODM DocumentManager.
+     *
+     * @param array $config ODM DocumentManager configuration.
+     *
+     * @return Doctrine\ODM\MongoDB\DocumentManager
+     */
+    private function startODMDocumentManager(array $config = array())
+    {
+        return \Doctrine\ODM\MongoDB\DocumentManager::create(
+            $this->getMongoDBConnection($config['connection']),
+            $this->startODMConfiguration($config)
+        );
+    }
 
     /**
      * Initialize ORM Configuration.
@@ -576,6 +776,58 @@ class DoctrineContainer
 
         // Metadata configuration
         $configuration->setMetadataDriverImpl($this->startORMMetadata($config['metadataDrivers']));
+
+        // DQL Functions configuration
+        $dqlFunctions = $config['DQLFunctions'];
+
+        foreach ($dqlFunctions['datetime'] as $name => $className) {
+            $configuration->addCustomDatetimeFunction($name, $className);
+        }
+
+        foreach ($dqlFunctions['numeric'] as $name => $className) {
+            $configuration->addCustomNumericFunction($name, $className);
+        }
+
+        foreach ($dqlFunctions['string'] as $name => $className) {
+            $configuration->addCustomStringFunction($name, $className);
+        }
+
+        return $configuration;
+    }
+    
+	/**
+     * Initialize ODM Configuration.
+     *
+     * @param array $config ODM DocumentManager configuration.
+     *
+     * @return Doctrine\ODM\MongoDB\Configuration
+     */
+    private function startODMConfiguration(array $config = array())
+    {
+        $configClass = $config['configurationClass'];
+        $configuration = new $configClass();
+
+        $configuration = new \Doctrine\ODM\MongoDB\Configuration();
+
+        // Document Namespaces configuration
+        foreach ($config['documentNamespaces'] as $alias => $namespace) {
+            $configuration->addDocumentNamespace($alias, $namespace);
+        }
+
+        // Proxy configuration
+        $configuration->setAutoGenerateProxyClasses(
+            ! in_array($config['proxy']['autoGenerateClasses'], array("0", "false", false), true)
+        );
+        $configuration->setProxyNamespace($config['proxy']['namespace']);
+        $configuration->setProxyDir($config['proxy']['dir']);
+
+        // Cache configuration
+        $configuration->setMetadataCacheImpl($this->getCacheInstance($config['metadataCache']));
+//        $configuration->setResultCacheImpl($this->getCacheInstance($config['resultCache']));
+//        $configuration->setQueryCacheImpl($this->getCacheInstance($config['queryCache']));
+
+        // Metadata configuration
+        $configuration->setMetadataDriverImpl($this->startODMMetadata($config['metadataDrivers']));
 
         // DQL Functions configuration
         $dqlFunctions = $config['DQLFunctions'];
@@ -629,6 +881,61 @@ class DoctrineContainer
                 $annotationReaderClass = $driver['annotationReaderClass'];
                 $annotationReader = new $annotationReaderClass($this->getCacheInstance($driver['annotationReaderCache']));
                 $annotationReader->setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
+
+                foreach ($driver['annotationReaderNamespaces'] as $alias => $namespace) {
+                    $annotationReader->setAnnotationNamespaceAlias($namespace, $alias);
+                }
+
+                $nestedDriver = $reflClass->newInstance($annotationReader, $driver['mappingDirs']);
+            } else {
+                $nestedDriver = $reflClass->newInstance($driver['mappingDirs']);
+            }
+            
+            $metadataDriver->addDriver($nestedDriver, $driver['mappingNamespace']);
+        }
+
+        if (($drivers = $metadataDriver->getDrivers()) && count($drivers) == 1) {
+            reset($drivers);
+            $metadataDriver = $drivers[key($drivers)];
+        }
+
+        return $metadataDriver;
+    }
+    
+	/**
+     * Initialize ODM Metadata drivers.
+     *
+     * @param array $config ODM Mapping drivers.
+     *
+     * @return Doctrine\ODM\MongoDB\Mapping\Driver\DriverChain
+     */
+    private function startODMMetadata(array $config = array())
+    {
+        $metadataDriver = new \Doctrine\ODM\MongoDB\Mapping\Driver\DriverChain();
+
+        // Default metadata driver configuration
+        $defaultMetadataDriver = array(
+            'adapterClass'               => 'Doctrine\ODM\MongoDB\Mapping\Driver\AnnotationDriver',
+            'mappingNamespace'           => '',
+            'mappingDirs'                => array(),
+            'annotationReaderClass'      => 'Doctrine\Common\Annotations\AnnotationReader',
+            'annotationReaderCache'      => $this->defaultCacheInstance,
+            'annotationReaderNamespaces' => array()
+        );
+
+        foreach ($config as $driver) {
+            $driver = array_replace_recursive($defaultMetadataDriver, $driver);
+            
+            $reflClass = new \ReflectionClass($driver['adapterClass']);
+            $nestedDriver = null;
+
+            if (
+                $reflClass->getName() == 'Doctrine\ODM\MongoDB\Mapping\Driver\AnnotationDriver' ||
+                $reflClass->isSubclassOf('Doctrine\ODM\MongoDB\Mapping\Driver\AnnotationDriver')
+            ) {
+                $annotationReaderClass = $driver['annotationReaderClass'];
+                $annotationReader = new $annotationReaderClass($this->getCacheInstance($driver['annotationReaderCache']));
+                $annotationReader->setDefaultAnnotationNamespace('Doctrine\ODM\MongoDB\Mapping\\');
 
                 foreach ($driver['annotationReaderNamespaces'] as $alias => $namespace) {
                     $annotationReader->setAnnotationNamespaceAlias($namespace, $alias);
