@@ -46,6 +46,11 @@ class DoctrineContainer
      * @var string Default ORM EntityManager name.
      */
     public $defaultEntityManager = 'default';
+    
+    /**
+     * @var string Default ODM EntityManager name.
+     */
+    public $defaultDocumentManager = 'default';
 
     /**
      * @var array Doctrine Context configuration.
@@ -100,12 +105,23 @@ class DoctrineContainer
             // Defining default ORM EntityManager
             $this->defaultEntityManager = $ormConfig['defaultEntityManager'];
         }
+        
+        // Defining ODM configuration
+        $odmConfig = array();
+
+        if (isset($config['odm'])) {
+            $odmConfig  = $this->prepareODMConfiguration($config);
+
+            // Defining default ORM EntityManager
+            $this->defaultDocumentManager = $odmConfig['defaultDocumentManager'];
+        }
 
         // Defining Doctrine Context configuration
         $this->configuration = array(
             'dbal'  => $dbalConfig['connections'],
             'cache' => $cacheConfig['instances'],
-            'orm'   => $ormConfig['entityManagers']
+            'orm'   => $ormConfig['entityManagers'],
+            'odm'	=> $odmConfig['documentManagers'],
         );
     }
 
@@ -257,6 +273,54 @@ class DoctrineContainer
         return array(
             'defaultEntityManager' => $defaultEntityManagerName,
             'entityManagers'       => $entityManagers
+        );
+    }
+    
+	/**
+     * Prepare ODM DocumentManagers configurations.
+     *
+     * @param array $config Doctrine Container configuration
+     *
+     * @return array
+     */
+    private function prepareODMConfiguration(array $config = array())
+    {
+        $odmConfig = $config['odm'];
+        $defaultDocumentManagerName = isset($odmConfig['defaultDocumentManager'])
+            ? $odmConfig['defaultDocumentManager'] : $this->defaultDocumentManager;
+
+        unset($odmConfig['defaultDocumentManager']);
+
+        $defaultDocumentManager = array(
+            'documentManagerClass'    => 'Doctrine\ODM\MongoDB\DocumentManager',
+    		'configurationClass'	  => 'Doctrine\ODM\MongoDB\Configuration',
+            'documentNamespaces'      => array(),
+            'proxy'                   => array(
+                'autoGenerateClasses' => true,
+                'namespace'           => 'Proxy',
+                'dir'                 => APPLICATION_PATH . '/../library/Proxy'
+            ),
+            'metadataDrivers'         => array(),
+        );
+
+        $documentManagers = array();
+
+        if (isset($odmConfig['documentManagers'])) {
+            $configDocumentManagers = $odmConfig['documentManagers'];
+
+            foreach ($configDocumentManagers as $name => $documentManager) {
+                $name = isset($documentManager['id']) ? $documentManager['id'] : $name;
+                $documentManagers[$name] = array_replace_recursive($defaultDocumentManager, $documentManager);
+            }
+        } else {
+            $documentManagers = array(
+                $this->defaultConnection => array_replace_recursive($defaultDocumentManager, $odmConfig)
+            );
+        }
+
+        return array(
+            'defaultDocumentManager' => $defaultDocumentManagerName,
+            'documentManagers'       => $documentManagers
         );
     }
 
