@@ -9,9 +9,9 @@ class VideoController extends Zend_Controller_Action
     protected $doctrine;
 
     /**
-     * @var Doctrine\ORM\EntityManager
+     * @var Doctrine\ODM\MongoDB\DocumentManager
      */
-    protected $entityManager;
+    protected $documentManager;
 
     /**
      * @var ShareThat\Entity\Repository\VideoRepository
@@ -21,8 +21,8 @@ class VideoController extends Zend_Controller_Action
     public function init()
     {
         $this->doctrine = Zend_Registry::get('doctrine');
-        $this->entityManager = $this->doctrine->getEntityManager();
-        $this->videoRepository = $this->entityManager->getRepository('\ShareThat\Entity\Video');
+        $this->documentManager = $this->doctrine->getDocumentManager();
+        $this->videoRepository = $this->documentManager->getRepository('\ShareThat\Entity\Video');
     }
 
     public function indexAction()
