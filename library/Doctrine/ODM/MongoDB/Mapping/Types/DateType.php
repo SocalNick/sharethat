@@ -32,51 +32,19 @@ class DateType extends Type
 {
     public function convertToDatabaseValue($value)
     {
-        if ($value === null) {
-            return null;
-        }
-        if ($value instanceof \MongoDate) {
-            return $value;
-        }
-        $timestamp = false;
         if ($value instanceof \DateTime) {
-            $timestamp = $value->getTimestamp();
-        } elseif (is_numeric($value)) {
-            $timestamp = $value;
-        } elseif (is_string($value)) {
-            $timestamp = strtotime($value);
+            $value = $value->getTimestamp();
         }
-        // Could not convert date to timestamp so store ISO 8601 formatted date instead
-        if ($timestamp === false) {
-            $date = new \DateTime($value);
-            return $date->format('c');
-        } else {
-            $value = $timestamp;
+        if (is_string($value)) {
+            $value = strtotime($value);
         }
         return new \MongoDate($value);
     }
 
     public function convertToPHPValue($value)
     {
-        if ($value === null) {
-            return null;
-        }
-        if ($value instanceof \MongoDate) {
-            $date = new \DateTime();
-            $date->setTimestamp($value->sec);
-        } else {
-            $date = new \DateTime($value);
-        }
+        $date = new \DateTime();
+        $date->setTimestamp($value->sec);
         return $date;
-    }
-
-    public function closureToMongo()
-    {
-        return 'if ($value instanceof \DateTime) { $value = $value->getTimestamp(); } else if (is_string($value)) { $value = strtotime($value); } $return = new \MongoDate($value);';
-    }
-
-    public function closureToPHP()
-    {
-        return 'if ($value === null) { return null; } if ($value instanceof \MongoDate) { $date = new \DateTime(); $date->setTimestamp($value->sec); $return = $date; } else { $return = new \DateTime($value); }';
     }
 }

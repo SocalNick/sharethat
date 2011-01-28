@@ -17,7 +17,6 @@
  * <http://www.doctrine-project.org>.
  */
 
-
 namespace Doctrine\ODM\MongoDB;
 
 /**
@@ -46,11 +45,6 @@ class DocumentRepository
     protected $dm;
 
     /**
-     * @var UnitOfWork
-     */
-    protected $uow;
-
-    /**
      * @var Doctrine\ODM\MongoDB\Mapping\ClassMetadata
      */
     protected $class;
@@ -59,25 +53,24 @@ class DocumentRepository
      * Initializes a new <tt>DocumentRepository</tt>.
      *
      * @param DocumentManager $dm The DocumentManager to use.
-     * @param UnitOfWork $uow The UnitOfWork to use.
      * @param ClassMetadata $classMetadata The class descriptor.
      */
-    public function __construct(DocumentManager $dm, UnitOfWork $uow, Mapping\ClassMetadata $class)
+    public function __construct($dm, Mapping\ClassMetadata $class)
     {
         $this->documentName = $class->name;
-        $this->dm           = $dm;
-        $this->uow          = $uow;
-        $this->class        = $class;
+        $this->dm = $dm;
+        $this->class = $class;
     }
 
     /**
-     * Create a new Query\Builder instance that is prepopulated for this document name
+     * Create a new Query instance that is prepopulated for this document name
      *
-     * @return Query\Builder $qb
+     * @return Query $qb
      */
-    public function createQueryBuilder()
+    public function createQuery()
     {
-        return $this->dm->createQueryBuilder($this->documentName);
+        return $this->dm->createQuery()
+            ->from($this->documentName);
     }
 
     /**
@@ -89,50 +82,48 @@ class DocumentRepository
     }
 
     /**
-     * Finds a document by its identifier.
+     * Find a single document by its identifier or multiple by a given criteria.
      *
-     * @param $id The identifier.
-     * @param int $lockMode
-     * @param int $lockVersion
-     * @return object The document.
+     * @param mixed $query A single identifier or an array of criteria.
+     * @param array $select The fields to select.
+     * @return Doctrine\ODM\MongoDB\MongoCursor $cursor
+     * @return object $document
      */
-    public function find($id, $lockMode = LockMode::NONE, $lockVersion = null)
+    public function find($query = array(), array $select = array())
     {
-        // Check identity map first
-        if ($document = $this->uow->tryGetById($id, $this->class->rootDocumentName)) {
-            if ($lockMode != LockMode::NONE) {
-                $this->dm->lock($document, $lockMode, $lockVersion);
+        if (is_scalar($query)) {
+            if ($document = $this->dm->getUnitOfWork()->tryGetById($query, $this->documentName)) {
+                return $document; // Hit!
             }
 
-            return $document; // Hit!
-        }
-
-        $id = array('_id' => $id);
-
-        if ($lockMode == LockMode::NONE) {
-            return $this->uow->getDocumentPersister($this->documentName)->load($id);
-        } else if ($lockMode == LockMode::OPTIMISTIC) {
-            if (!$this->class->isVersioned) {
-                throw LockException::notVersioned($this->documentName);
-            }
-            $document = $this->uow->getDocumentPersister($this->documentName)->load($id);
-
-            $this->uow->lock($document, $lockMode, $lockVersion);
-
-            return $document;
+            return $this->dm->getUnitOfWork()->getDocumentPersister($this->documentName)->loadById($query);
         } else {
-            return $this->uow->getDocumentPersister($this->documentName)->load($id, null, array(), $lockMode);
+            return $this->dm->getUnitOfWork()->getDocumentPersister($this->documentName)->loadAll($query, $select);
         }
+    }
+
+    /**
+     * Find a single document with the given query and select fields.
+     *
+     * @param string $documentName The document to find.
+     * @param array $query The query criteria.
+     * @param array $select The fields to select
+     * @return object $document
+     */
+    public function findOne(array $query = array(), array $select = array())
+    {
+        return $this->dm->getUnitOfWork()->getDocumentPersister($this->documentName)->load($query, $select);
     }
 
     /**
      * Finds all documents in the repository.
      *
-     * @return array The entities.
+     * @param int $hydrationMode
+     * @return array The documents.
      */
     public function findAll()
     {
-        return $this->findBy(array());
+        return $this->find();
     }
 
     /**
@@ -143,7 +134,7 @@ class DocumentRepository
      */
     public function findBy(array $criteria)
     {
-        return $this->uow->getDocumentPersister($this->documentName)->loadAll($criteria);
+        return $this->find($criteria);
     }
 
     /**
@@ -154,7 +145,7 @@ class DocumentRepository
      */
     public function findOneBy(array $criteria)
     {
-        return $this->uow->getDocumentPersister($this->documentName)->load($criteria);
+       return $this->findOne($criteria);
     }
 
     /**

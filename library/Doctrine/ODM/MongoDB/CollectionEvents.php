@@ -1,5 +1,7 @@
 <?php
 /*
+ *  $Id$
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -15,59 +17,40 @@
  * This software consists of voluntary contributions made by many individuals
  * and is licensed under the LGPL. For more information, see
  * <http://www.doctrine-project.org>.
-*/
+ */
 
-namespace Doctrine\MongoDB\Event;
-
-use Doctrine\Common\EventArgs;
+namespace Doctrine\ODM\MongoDB;
 
 /**
- * Create collection event args.
+ * Container for all MongoCollection events.
+ *
+ * This class cannot be instantiated.
  *
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
  * @link        www.doctrine-project.com
  * @since       1.0
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  */
-class CreateCollectionEventArgs extends EventArgs
+final class CollectionEvents
 {
-    private $invoker;
-    private $name;
-    private $capped;
-    private $size;
-    private $max;
+    const preBatchInsert = 'collectionPreBatchInsert';
+    const postBatchInsert = 'collectionPostBatchInsert';
 
-    public function __construct($invoker, &$name, &$capped, &$size, &$max)
-    {
-        $this->invoker = $invoker;
-        $this->name = $name;
-        $this->capped = $capped;
-        $this->size = $size;
-        $this->max = $max;
-    }
+    const preUpdate = 'collectionPreUpdate';
+    const postUpdate = 'collectionPostUpdate';
 
-    public function getInvoker()
-    {
-        return $this->invoker;
-    }
+    const preSaveFile = 'collectionPreSaveFile';
+    const postSaveFile = 'collectionPostSaveFile';
 
-    public function getName()
-    {
-        return $this->name;
-    }
+    const preGetDBRef = 'collectionPreGetDBRef';
+    const postGetDBRef = 'collectionPostGetDBRef';
 
-    public function getCapped()
-    {
-        return $this->capped;
-    }
+    const preSave = 'collectionPreSave';
+    const postSave = 'collectionPostSave';
 
-    public function getSize()
-    {
-        return $this->size;
-    }
+    const preFind = 'collectionPreFind';
+    const postFind = 'collectionPostFind';
 
-    public function getMax()
-    {
-        return $this->max;
-    }
+    const preFindOne = 'collectionPreFindOne';
+    const postFindOne = 'collectionPostFindOne';
 }

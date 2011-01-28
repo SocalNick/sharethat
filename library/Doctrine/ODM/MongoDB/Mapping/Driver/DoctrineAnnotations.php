@@ -65,21 +65,17 @@ final class UniqueIndex extends Index
     public $unique = true;
 }
 
-final class Version extends Annotation {}
-final class Lock extends Annotation {}
-
 class Field extends Annotation
 {
     public $name;
     public $type = 'string';
     public $nullable = false;
-    public $options = array();
 }
 final class Id extends Field
 {
     public $id = true;
     public $type = 'id';
-    public $strategy = 'auto';
+    public $custom = false;
 }
 final class Hash extends Field
 {
@@ -145,7 +141,7 @@ final class Increment extends Field
 final class Collection extends Field
 {
     public $type = 'collection';
-    public $strategy = 'pushAll'; // pushAll, set
+    public $strategy = 'pushPull'; // pushPull, set
 }
 final class EmbedOne extends Field
 {
@@ -154,6 +150,7 @@ final class EmbedOne extends Field
     public $targetDocument;
     public $discriminatorField;
     public $discriminatorMap;
+    public $cascade;
 }
 final class EmbedMany extends Field
 {
@@ -162,7 +159,8 @@ final class EmbedMany extends Field
     public $targetDocument;
     public $discriminatorField;
     public $discriminatorMap;
-    public $strategy = 'pushAll'; // pushAll, set
+    public $strategy = 'pushPull'; // pushPull, set
+    public $cascade;
 }
 final class ReferenceOne extends Field
 {
@@ -181,15 +179,10 @@ final class ReferenceMany extends Field
     public $discriminatorField;
     public $discriminatorMap;
     public $cascade;
-    public $strategy = 'pushAll'; // pushAll, set
+    public $strategy = 'pushPull'; // pushPull, set
 }
-class NotSaved extends Field {}
-final class Distance extends Field
-{
-    public $distance = true;
-}
-final class AlsoLoad extends Annotation
-{
+final class NotSaved extends Field {}
+final class AlsoLoad extends Annotation {
     public $name;
 }
 final class ChangeTrackingPolicy extends Annotation {}

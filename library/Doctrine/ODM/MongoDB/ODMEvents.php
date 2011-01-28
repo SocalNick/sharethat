@@ -32,7 +32,7 @@ namespace Doctrine\ODM\MongoDB;
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  * @author      Roman Borschel <roman@code-factory.org>
  */
-final class Events
+final class ODMEvents
 {
     private function __construct() {}
 
@@ -130,7 +130,7 @@ final class Events
      * @var string
      */
     const loadClassMetadata = 'loadClassMetadata';
-
+    
     /**
      * The onFlush event occurs when the DocumentManager#flush() operation is invoked,
      * after any changes to managed documents have been determined but before any
@@ -141,4 +141,11 @@ final class Events
      * @var string
      */
     const onFlush = 'onFlush';
+
+    /**
+     * The onUpdatePrepared event occurs when the BasicDocumentPersister prepared
+     * update array for document, including atomic operators, right before that
+     * array is executed in mongo.
+     */
+    const onUpdatePrepared = 'onUpdatePrepared';
 }

@@ -19,14 +19,11 @@
 
 namespace Doctrine\ODM\MongoDB\Mapping;
 
-
 use Doctrine\ODM\MongoDB\DocumentManager,
-    Doctrine\ODM\MongoDB\Configuration,
     Doctrine\ODM\MongoDB\Mapping\ClassMetadata,
     Doctrine\ODM\MongoDB\MongoDBException,
-    Doctrine\ODM\MongoDB\Events,
-    Doctrine\Common\Cache\Cache,
-    Doctrine\ODM\MongoDB\Mapping\Types\Type;
+    Doctrine\ODM\MongoDB\ODMEvents,
+    Doctrine\Common\Cache\Cache;
 
 /**
  * The ClassMetadataFactory is used to create ClassMetadata objects that contain all the
@@ -44,9 +41,6 @@ class ClassMetadataFactory
     /** The DocumentManager instance */
     private $dm;
 
-    /** The Configuration instance */
-    private $config;
-
     /** The array of loaded ClassMetadata instances */
     private $loadedMetadata;
 
@@ -63,23 +57,13 @@ class ClassMetadataFactory
     private $initialized = false;
 
     /**
-     * Sets the DocumentManager instance for this class.
+     * Creates a new factory instance that uses the given DocumentManager instance.
      *
-     * @param EntityManager $dm The DocumentManager instance
+     * @param $dm  The DocumentManager instance
      */
-    public function setDocumentManager(DocumentManager $dm)
+    public function __construct(DocumentManager $dm)
     {
         $this->dm = $dm;
-    }
-
-    /**
-     * Sets the Configuration instance
-     *
-     * @param Configuration $config
-     */
-    public function setConfiguration(Configuration $config)
-    {
-        $this->config = $config;
     }
 
     /**
@@ -88,7 +72,7 @@ class ClassMetadataFactory
      */
     private function initialize()
     {
-        $this->driver = $this->config->getMetadataDriverImpl();
+        $this->driver = $this->dm->getConfiguration()->getMetadataDriverImpl();
         $this->evm = $this->dm->getEventManager();
         $this->initialized = true;
     }
@@ -126,7 +110,7 @@ class ClassMetadataFactory
     /**
      * Forces the factory to load the metadata of all classes known to the underlying
      * mapping driver.
-     *
+     * 
      * @return array The ClassMetadata instances of all mapped classes.
      */
     public function getAllMetadata()
@@ -157,7 +141,7 @@ class ClassMetadataFactory
             // Check for namespace alias
             if (strpos($className, ':') !== false) {
                 list($namespaceAlias, $simpleClassName) = explode(':', $className);
-                $realClassName = $this->config->getDocumentNamespace($namespaceAlias) . '\\' . $simpleClassName;
+                $realClassName = $this->dm->getConfiguration()->getDocumentNamespace($namespaceAlias) . '\\' . $simpleClassName;
 
                 if (isset($this->loadedMetadata[$realClassName])) {
                     // We do not have the alias name in the map, include it
@@ -223,19 +207,12 @@ class ClassMetadataFactory
             $class = $this->newClassMetadataInstance($className);
 
             if ($parent) {
-                if (!$parent->isMappedSuperclass) {
-                    $class->setInheritanceType($parent->inheritanceType);
-                    $class->setDiscriminatorField($parent->discriminatorField);
-                    $class->setDiscriminatorMap($parent->discriminatorMap);
-                }
-                $class->setIdGeneratorType($parent->generatorType);
+                $class->setInheritanceType($parent->inheritanceType);
+                $class->setDiscriminatorField($parent->discriminatorField);
                 $this->addInheritedFields($class, $parent);
-                $this->addInheritedIndexes($class, $parent);
                 $class->setIdentifier($parent->identifier);
-                $class->setVersioned($parent->isVersioned);
-                $class->setVersionField($parent->versionField);
+                $class->setDiscriminatorMap($parent->discriminatorMap);
                 $class->setLifecycleCallbacks($parent->lifecycleCallbacks);
-                $class->setChangeTrackingPolicy($parent->changeTrackingPolicy);
                 $class->setFile($parent->getFile());
             }
 
@@ -249,33 +226,20 @@ class ClassMetadataFactory
             if ( ! $class->identifier && ! $class->isMappedSuperclass && ! $class->isEmbeddedDocument) {
                 throw MongoDBException::identifierRequired($className);
             }
-            if ($parent && ! $parent->isMappedSuperclass && ! $class->isEmbeddedDocument) {
-                if ($parent->generatorType) {
-                    $class->setIdGeneratorType($parent->generatorType);
-                }
-                if ($parent->generatorOptions) {
-                    $class->setIdGeneratorOptions($parent->generatorOptions);
-                }
-                if ($parent->idGenerator) {
-                    $class->setIdGenerator($parent->idGenerator);
-                }
-            } else {
-                $this->completeIdGeneratorMapping($class);
-            }
 
             if ($parent && $parent->isInheritanceTypeSingleCollection()) {
-                $class->setDatabase($parent->getDatabase());
+                $class->setDB($parent->getDB());
                 $class->setCollection($parent->getCollection());
             }
 
-            $db = $class->getDatabase() ?: $this->config->getDefaultDB();
-            $class->setDatabase($this->dm->formatDBName($db));
+            $db = $class->getDB() ?: $this->dm->getConfiguration()->getDefaultDB();
+            $class->setDB($this->dm->formatDBName($db));
 
             $class->setParentClasses($visited);
 
-            if ($this->evm->hasListeners(Events::loadClassMetadata)) {
-                $eventArgs = new \Doctrine\ODM\MongoDB\Event\LoadClassMetadataEventArgs($class, $this->dm);
-                $this->evm->dispatchEvent(Events::loadClassMetadata, $eventArgs);
+            if ($this->evm->hasListeners(ODMEvents::loadClassMetadata)) {
+                $eventArgs = new \Doctrine\ODM\MongoDB\Event\LoadClassMetadataEventArgs($class);
+                $this->evm->dispatchEvent(ODMEvents::loadClassMetadata, $eventArgs);
             }
 
             $this->loadedMetadata[$className] = $class;
@@ -294,7 +258,7 @@ class ClassMetadataFactory
 
     /**
      * Checks whether the factory has the metadata for a class loaded already.
-     *
+     * 
      * @param string $className
      * @return boolean TRUE if the metadata of the class in question is already loaded, FALSE otherwise.
      */
@@ -305,7 +269,7 @@ class ClassMetadataFactory
 
     /**
      * Sets the metadata descriptor for a specific class.
-     *
+     * 
      * NOTE: This is only useful in very special cases, like when generating proxy classes.
      *
      * @param string $className
@@ -345,29 +309,6 @@ class ClassMetadataFactory
         return $parentClasses;
     }
 
-    private function completeIdGeneratorMapping(ClassMetadata $class)
-    {
-        $idGenType = $class->generatorType;
-        $idGenOptions = $class->generatorOptions;
-        switch ($class->generatorType) {
-            case ClassMetadata::GENERATOR_TYPE_AUTO:
-                $class->setIdGenerator(new \Doctrine\ODM\MongoDB\Id\AutoGenerator($class));
-                break;
-            case ClassMetadata::GENERATOR_TYPE_INCREMENT:
-                $class->setIdGenerator(new \Doctrine\ODM\MongoDB\Id\IncrementGenerator($class));
-                break;
-            case ClassMetadata::GENERATOR_TYPE_UUID:
-                $uuidGenerator = new \Doctrine\ODM\MongoDB\Id\UuidGenerator($class);
-                $uuidGenerator->setSalt(isset($idGenOptions['salt']) ? $idGenOptions['salt'] : php_uname('n'));
-                $class->setIdGenerator($uuidGenerator);
-                break;
-            case ClassMetadata::GENERATOR_TYPE_NONE;
-                break;
-            default:
-                throw new MongoDBException("Unknown generator type: " . $class->generatorType);
-        }
-    }
-
     /**
      * Adds inherited fields to the subclass mapping.
      *
@@ -387,19 +328,6 @@ class ClassMetadataFactory
         }
         foreach ($parentClass->reflFields as $name => $field) {
             $subClass->reflFields[$name] = $field;
-        }
-    }
-
-    /**
-     * Adds inherited indexes to the subclass mapping.
-     *
-     * @param Doctrine\ODM\MongoDB\Mapping\ClassMetadata $subClass
-     * @param Doctrine\ODM\MongoDB\Mapping\ClassMetadata $parentClass
-     */
-    private function addInheritedIndexes(ClassMetadata $subClass, ClassMetadata $parentClass)
-    {
-        foreach ($parentClass->indexes as $index) {
-            $subClass->addIndex($index['keys'], $index['options']);
         }
     }
 }

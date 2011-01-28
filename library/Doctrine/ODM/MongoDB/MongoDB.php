@@ -15,47 +15,59 @@
  * This software consists of voluntary contributions made by many individuals
  * and is licensed under the LGPL. For more information, see
  * <http://www.doctrine-project.org>.
-*/
+ */
 
-namespace Doctrine\MongoDB\Event;
-
-use Doctrine\Common\EventArgs;
+namespace Doctrine\ODM\MongoDB;
 
 /**
- * Map reduce event args.
+ * Wrapper for the PHP MongoDB class.
  *
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
- * @link        www.doctrine-project.com
+ * @link        www.doctrine-project.org
  * @since       1.0
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  */
-class MapReduceEventArgs extends EventArgs
+class MongoDB
 {
-    private $invoker;
-    private $map;
-    private $reduce;
-    private $query = array();
+    /** The PHP MongoDB instance being wrapped */
+    private $mongoDB;
 
-    public function __construct($invoker, &$map, array &$reduce, array &$query)
+    /**
+     * Create a new MongoDB instance which wraps a PHP MongoDB instance.
+     *
+     * @param MongoDB $mongoDB  The MongoDB instance to wrap.
+     */
+    public function __construct(\MongoDB $mongoDB)
     {
-        $this->invoker = $invoker;
-        $this->map = $map;
-        $this->reduce = $reduce;
-        $this->query = $query;
+        $this->mongoDB = $mongoDB;
     }
 
-    public function getKeys()
+    public function getName()
     {
-        return $this->keys;
+        return (string) $this->mongoDB;
     }
 
-    public function getReduce()
+    /**
+     * Get the MongoDB instance being wrapped.
+     *
+     * @return MongoDB $mongoDB
+     */
+    public function getMongoDB()
     {
-        return $this->reduce;
+        return $this->mongoDB;
     }
 
-    public function getQuery()
+    public function selectCollection($collection)
     {
-        return $this->query;
+        return $this->mongoDB->selectCollection($collection);
+    }
+
+    /** @proxy */
+    public function __call($method, $arguments)
+    {
+        if (method_exists($this->mongoDB, $method)) {
+            return call_user_func_array(array($this->mongoDB, $method), $arguments);
+        }
+        throw new \BadMethodCallException(sprintf('Method %s does not exist on %s', $method, get_class($this)));
     }
 }

@@ -100,14 +100,14 @@ class MongoDBException extends \Exception
         return new self("Unknown Document namespace alias '$documentNamespaceAlias'.");
     }
 
-    public static function cannotPersistMappedSuperclass($className)
+    public static function cannotPersistEmbeddedDocumentOrMappedSuperclass($className)
     {
         return new self('Cannot persist an embedded document or mapped superclass ' . $className);
     }
 
-    public static function mappingNotFound($className, $fieldName)
+    public static function mappingNotFound($fieldName)
     {
-        return new self("No mapping found for field '$fieldName' in class '$className'.");
+        return new self("No mapping found for field '$fieldName'.");
     }
 
     public static function duplicateFieldMapping($document, $fieldName)
@@ -165,9 +165,11 @@ class MongoDBException extends \Exception
         return new self('An error occurred in ' . $document, 0, $previousException);
     }
 
+
     public static function identifierRequired($documentName)
     {
         return new self("No identifier/primary key specified for Document '$documentName'."
                 . " Every Document must have an identifier/primary key.");
     }
+
 }

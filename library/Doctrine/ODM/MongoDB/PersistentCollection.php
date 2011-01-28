@@ -19,9 +19,10 @@
 
 namespace Doctrine\ODM\MongoDB;
 
-use Doctrine\Common\Collections\Collection as BaseCollection,
+use Doctrine\Common\Collections\Collection,
     Doctrine\ODM\MongoDB\Mapping\ClassMetadata,
     Doctrine\ODM\MongoDB\Proxy\Proxy,
+    Doctrine\ODM\MongoDB\DocumentManager,
     Closure;
 
 /**
@@ -32,7 +33,7 @@ use Doctrine\Common\Collections\Collection as BaseCollection,
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  * @author      Roman Borschel <roman@code-factory.org>
  */
-class PersistentCollection implements BaseCollection
+class PersistentCollection implements Collection
 {
     /**
      * A snapshot of the collection at the moment it was fetched from the database.
@@ -56,14 +57,14 @@ class PersistentCollection implements BaseCollection
 
     /**
      * Whether the collection has already been initialized.
-     *
+     * 
      * @var boolean
      */
     private $initialized = true;
-
+    
     /**
      * The wrapped Collection instance.
-     *
+     * 
      * @var Collection
      */
     private $coll;
@@ -76,66 +77,65 @@ class PersistentCollection implements BaseCollection
     private $dm;
 
     /**
-     * The UnitOfWork that manages the persistence of the collection.
-     *
-     * @var Doctrine\ODM\MongoDB\UnitOfWork
-     */
-    private $uow;
-
-    /**
      * Mongo command prefix
      * @var string
      */
     private $cmd;
 
     /**
-     * The raw mongo data that will be used to initialize this collection.
+     * Array of references to load on initialization.
      *
      * @var array
      */
-    private $mongoData = array();
+    private $references = array();
 
-    public function __construct(BaseCollection $coll, DocumentManager $dm, UnitOfWork $uow, $cmd)
+    public function __construct(Collection $coll, DocumentManager $dm = null)
     {
         $this->coll = $coll;
-        $this->dm   = $dm;
-        $this->uow  = $uow;
-        $this->cmd  = $cmd;
+        if ($dm !== null) {
+            $this->dm = $dm;
+            $this->cmd = $dm->getConfiguration()->getMongoCmd();
+        }
     }
 
-    /**
-     * Sets the array of raw mongo data that will be used to initialize this collection.
-     *
-     * @param array $mongoData
-     */
-    public function setMongoData(array $mongoData)
+    public function setReferences(array $references)
     {
-        $this->mongoData = $mongoData;
+        $this->references = $references;
     }
 
-    /**
-     * Gets the array of raw mongo data that will be used to initialize this collection.
-     *
-     * @return array $mongoData
-     */
-    public function getMongoData()
+    private function initialize()
     {
-        return $this->mongoData;
-    }
-
-    /**
-     * Initializes the collection by loading its contents from the database
-     * if the collection is not yet initialized.
-     */
-    public function initialize()
-    {
-        if ( ! $this->initialized && $this->mapping) {
+        if ( ! $this->initialized) {
             if ($this->isDirty) {
                 // Has NEW objects added through add(). Remember them.
                 $newObjects = $this->coll->toArray();
             }
             $this->coll->clear();
-            $this->uow->loadCollection($this);
+
+            $groupedIds = array();
+            foreach ($this->references as $reference) {
+                $className = $this->dm->getClassNameFromDiscriminatorValue($this->mapping, $reference);
+                if ( ! isset($groupedIds[$className])) {
+                    $groupedIds[$className] = array();
+                }
+                $id = $reference[$this->cmd . 'id'];
+                $groupedIds[$className][] = $id;
+                $reference = $this->dm->getReference($className, (string) $id);
+                $this->add($reference);
+            }
+            foreach ($groupedIds as $className => $ids) {
+                $collection = $this->dm->getDocumentCollection($className);
+                $data = $collection->find(array('_id' => array($this->cmd . 'in' => $ids)));
+                $hints = array(Query::HINT_REFRESH => Query::HINT_REFRESH);
+                foreach ($data as $id => $documentData) {
+                    $document = $this->dm->getUnitOfWork()->getOrCreateDocument($className, $documentData, $hints);
+                    if ($document instanceof Proxy) {
+                        $document->__isInitialized__ = true;
+                        unset($document->__dm);
+                        unset($document->__identifier);
+                    }
+                }
+            }
             $this->takeSnapshot();
             // Reattach NEW objects added through add(), if any.
             if (isset($newObjects)) {
@@ -144,7 +144,7 @@ class PersistentCollection implements BaseCollection
                 }
                 $this->isDirty = true;
             }
-            $this->mongoData = array();
+    
             $this->initialized = true;
         }
     }
@@ -157,13 +157,13 @@ class PersistentCollection implements BaseCollection
         if ( ! $this->isDirty) {
             $this->isDirty = true;
             if ($this->dm && $this->mapping !== null && $this->dm->getClassMetadata(get_class($this->owner))->isChangeTrackingNotify()) {
-                $this->uow->scheduleForDirtyCheck($this->owner);
+                $this->dm->getUnitOfWork()->scheduleForDirtyCheck($this->owner);
             }
         }
     }
 
     /**
-     * Gets a boolean flag indicating whether this collection is dirty which means
+     * Gets a boolean flag indicating whether this colleciton is dirty which means
      * its state needs to be synchronized with the database.
      *
      * @return boolean TRUE if the collection is dirty, FALSE otherwise.
@@ -205,17 +205,6 @@ class PersistentCollection implements BaseCollection
     {
         $this->snapshot = $this->coll->toArray();
         $this->isDirty = false;
-    }
-
-    /**
-     * INTERNAL:
-     * Clears the internal snapshot information and sets isDirty to true if the collection
-     * has elements.
-     */
-    public function clearSnapshot()
-    {
-        $this->snapshot = array();
-        $this->isDirty = $this->count() ? true : false;
     }
 
     /**
@@ -276,14 +265,14 @@ class PersistentCollection implements BaseCollection
 
     /**
      * Sets the initialized flag of the collection, forcing it into that state.
-     *
+     * 
      * @param boolean $bool
      */
     public function setInitialized($bool)
     {
         $this->initialized = $bool;
     }
-
+    
     /**
      * Checks whether this collection has been initialized.
      *
@@ -315,13 +304,6 @@ class PersistentCollection implements BaseCollection
     {
         $this->initialize();
         $removed = $this->coll->remove($key);
-        if ($removed) {
-            $this->changed();
-            if ($this->mapping !== null && isset($this->mapping['embedded'])) {
-                $this->uow->scheduleOrphanRemoval($removed);
-            }
-        }
-
         return $removed;
     }
 
@@ -331,15 +313,11 @@ class PersistentCollection implements BaseCollection
     public function removeElement($element)
     {
         $this->initialize();
-        $removed = $this->coll->removeElement($element);
-        if ($removed) {
-            $this->changed();
-            if ($this->mapping !== null && isset($this->mapping['embedded'])) {
-                $this->uow->scheduleOrphanRemoval($element);
-            }
-        }
-        return $removed;
+        $result = $this->coll->removeElement($element);
+        $this->changed();
+        return $result;
     }
+
     /**
      * {@inheritdoc}
      */
@@ -408,7 +386,8 @@ class PersistentCollection implements BaseCollection
      */
     public function count()
     {
-        return count($this->mongoData) + $this->coll->count();
+        $this->initialize();
+        return $this->coll->count();
     }
 
     /**
@@ -436,9 +415,10 @@ class PersistentCollection implements BaseCollection
      */
     public function isEmpty()
     {
-        return $this->count() === 0 ? true : false;
+        $this->initialize();
+        return $this->coll->isEmpty();
     }
-
+    
     /**
      * {@inheritdoc}
      */
@@ -465,7 +445,7 @@ class PersistentCollection implements BaseCollection
         $this->initialize();
         return $this->coll->filter($p);
     }
-
+    
     /**
      * {@inheritdoc}
      */
@@ -483,7 +463,7 @@ class PersistentCollection implements BaseCollection
         $this->initialize();
         return $this->coll->partition($p);
     }
-
+    
     /**
      * {@inheritdoc}
      */
@@ -501,27 +481,11 @@ class PersistentCollection implements BaseCollection
         if ($this->initialized && $this->isEmpty()) {
             return;
         }
-        if ($this->mapping !== null && isset($this->mapping['embedded'])) {
-            foreach ($this->coll as $element) {
-                $this->uow->scheduleOrphanRemoval($element);
-            }
-        }
-        $this->mongoData = array();
         $this->coll->clear();
         $this->changed();
-        $this->uow->scheduleCollectionDeletion($this);
         $this->takeSnapshot();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function slice($offset, $length = null)
-    {
-        $this->initialize();
-        return $this->coll->slice($offset, $length);
-    }
-
+     }
+    
     /**
      * Called by PHP when this collection is serialized. Ensures that only the
      * elements are properly serialized.
@@ -533,7 +497,7 @@ class PersistentCollection implements BaseCollection
     {
         return array('coll', 'initialized');
     }
-
+    
     /* ArrayAccess implementation */
 
     /**
@@ -571,12 +535,12 @@ class PersistentCollection implements BaseCollection
     {
         return $this->remove($offset);
     }
-
+    
     public function key()
     {
         return $this->coll->key();
     }
-
+    
     /**
      * Gets the element of the collection at the current iterator position.
      */
@@ -584,7 +548,7 @@ class PersistentCollection implements BaseCollection
     {
         return $this->coll->current();
     }
-
+    
     /**
      * Moves the internal iterator position to the next element.
      */
@@ -592,7 +556,7 @@ class PersistentCollection implements BaseCollection
     {
         return $this->coll->next();
     }
-
+    
     /**
      * Retrieves the wrapped Collection instance.
      */

@@ -56,44 +56,13 @@ abstract class Type
         'increment' => 'Doctrine\ODM\MongoDB\Mapping\Types\IncrementType'
     );
 
+    abstract public function convertToDatabaseValue($value);
+    abstract public function convertToPHPValue($value);
+
     /**
      * Array of instantiated type classes.
      */
     private static $types = array();
-
-    /**
-     * Converts a value from its PHP representation to its database representation
-     * of this type.
-     *
-     * @param mixed $value The value to convert.
-     * @return mixed The database representation of the value.
-     */
-    public function convertToDatabaseValue($value)
-    {
-        return $value;
-    }
-
-    /**
-     * Converts a value from its database representation to its PHP representation
-     * of this type.
-     *
-     * @param mixed $value The value to convert.
-     * @return mixed The PHP representation of the value.
-     */
-    public function convertToPHPValue($value)
-    {
-        return $value;
-    }
-
-    public function closureToMongo()
-    {
-        return '$return = $value;';
-    }
-
-    public function closureToPHP()
-    {
-        return '$return = $value;';
-    }
 
     /**
      * Register a new type in the type map.
@@ -123,38 +92,6 @@ abstract class Type
             self::$types[$type] = new $className;
         }
         return self::$types[$type];
-    }
-
-    /**
-     * Get a Type instance based on the type of the passed php variable.
-     *
-     * @param mixed $variable 
-     * @return Doctrine\ODM\MongoDB\Mapping\Types\Type $type
-     * @throws InvalidArgumentException
-     */
-    public static function getTypeFromPHPVariable($variable)
-    {
-        $type = gettype($variable);
-        $type = $type === 'object' ? get_class($variable) : $type;
-        switch ($type) {
-            case 'DateTime';
-            case 'MongoDate';
-                return self::getType('date');
-            case 'MongoId';
-                return self::getType('id');
-            case 'integer';
-                return self::getType('int');
-        }
-        return null;
-    }
-
-    public static function convertPHPToDatabaseValue($value)
-    {
-        $type = self::getTypeFromPHPVariable($value);
-        if ($type !== null) {
-            return $type->convertToDatabaseValue($value);
-        }
-        return $value;
     }
 
     /**

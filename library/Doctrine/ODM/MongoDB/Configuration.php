@@ -31,7 +31,7 @@ use Doctrine\ODM\MongoDB\Mapping\Driver\Driver,
  *     <?php
  *
  *     $config = new Configuration();
- *     $dm = DocumentManager::create(new Connection(), $config);
+ *     $dm = DocumentManager::create(new Mongo(), $config);
  *
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
  * @link        www.doctrine-project.com
@@ -39,8 +39,15 @@ use Doctrine\ODM\MongoDB\Mapping\Driver\Driver,
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  * @author      Roman Borschel <roman@code-factory.org>
  */
-class Configuration extends \Doctrine\MongoDB\Configuration
+class Configuration
 {
+    /**
+     * Array of attributes for this configuration instance.
+     *
+     * @var array $attributes
+     */
+    private $attributes = array('mongoCmd' => '$');
+
     /**
      * Adds a namespace under a certain alias.
      *
@@ -203,72 +210,6 @@ class Configuration extends \Doctrine\MongoDB\Configuration
     }
 
     /**
-     * Sets the directory where Doctrine generates hydrator class files.
-     *
-     * @param string $dir
-     */
-    public function setHydratorDir($dir)
-    {
-        $this->attributes['hydratorDir'] = $dir;
-    }
-
-    /**
-     * Gets the directory where Doctrine generates hydrator class files.
-     *
-     * @return string
-     */
-    public function getHydratorDir()
-    {
-        return isset($this->attributes['hydratorDir']) ?
-                $this->attributes['hydratorDir'] : null;
-    }
-
-    /**
-     * Gets a boolean flag that indicates whether hydrator classes should always be regenerated
-     * during each script execution.
-     *
-     * @return boolean
-     */
-    public function getAutoGenerateHydratorClasses()
-    {
-        return isset($this->attributes['autoGenerateHydratorClasses']) ?
-                $this->attributes['autoGenerateHydratorClasses'] : true;
-    }
-
-    /**
-     * Sets a boolean flag that indicates whether hydrator classes should always be regenerated
-     * during each script execution.
-     *
-     * @param boolean $bool
-     */
-    public function setAutoGenerateHydratorClasses($bool)
-    {
-        $this->attributes['autoGenerateHydratorClasses'] = $bool;
-    }
-
-    /**
-     * Gets the namespace where hydrator classes reside.
-     * 
-     * @return string
-     */
-    public function getHydratorNamespace()
-    {
-        return isset($this->attributes['hydratorNamespace']) ?
-                $this->attributes['hydratorNamespace'] : null;
-    }
-
-    /**
-     * Sets the namespace where hydrator classes reside.
-     * 
-     * @param string $ns
-     */
-    public function setHydratorNamespace($ns)
-    {
-        $this->attributes['hydratorNamespace'] = $ns;
-    }
-
-
-    /**
      * Sets the default DB to use for all Documents that do not specify
      * a database.
      *
@@ -323,11 +264,32 @@ class Configuration extends \Doctrine\MongoDB\Configuration
     }
 
     /**
+     * Set the logger callable.
+     *
+     * @param mixed $loggerCallable The logger callable.
+     */
+    public function setLoggerCallable($loggerCallable)
+    {
+        $this->attributes['loggerCallable'] = $loggerCallable;
+    }
+
+    /**
+     * Gets the logger callable.
+     *
+     * @return mixed $loggerCallable The logger callable.
+     */
+    public function getLoggerCallable()
+    {
+        return isset($this->attributes['loggerCallable']) ?
+                $this->attributes['loggerCallable'] : null;
+    }
+
+    /**
      * Set prefix for db name
      *
      * @param string $prefix The prefix for names of databases
      */
-    public function setDatabasePrefix($prefix = null)
+    public function setDBPrefix($prefix = null)
     {
         $this->attributes['dbPrefix'] = $prefix;
     }
@@ -337,7 +299,7 @@ class Configuration extends \Doctrine\MongoDB\Configuration
      *
      * @return string 
      */
-    public function getDatabasePrefix()
+    public function getDBPrefix()
     {
         return isset($this->attributes['dbPrefix']) ?
             $this->attributes['dbPrefix'] : null;
@@ -348,7 +310,7 @@ class Configuration extends \Doctrine\MongoDB\Configuration
      *
      * @param string $suffix The suffix for names of tables
      */
-    public function setDatabaseSuffix($suffix = null)
+    public function setDBSuffix($suffix = null)
     {
         $this->attributes['dbSuffix'] = $suffix;
     }
@@ -358,32 +320,27 @@ class Configuration extends \Doctrine\MongoDB\Configuration
      *
      * @return string
      */
-    public function getDatabaseSuffix()
+    public function getDBSuffix()
     {
         return isset($this->attributes['dbSuffix']) ?
             $this->attributes['dbSuffix'] : null;
     }
 
     /**
-     * Set the class metadata factory class name.
-     *
-     * @param string $cmf
+     * Get mongodb command prefix - '$' by default
+     * @return string
      */
-    public function setClassMetadataFactoryName($cmfName)
+    public function getMongoCmd()
     {
-        $this->_attributes['classMetadataFactoryName'] = $cmfName;
+        return $this->attributes['mongoCmd'];
     }
 
     /**
-     * Gets the class metadata factory class name.
-     *
-     * @return string
+     * Set mongodb command prefix
+     * @param string $cmd
      */
-    public function getClassMetadataFactoryName()
+    public function setMongoCmd($cmd)
     {
-        if ( ! isset($this->_attributes['classMetadataFactoryName'])) {
-            $this->_attributes['classMetadataFactoryName'] = 'Doctrine\ODM\MongoDB\Mapping\ClassMetadataFactory';
-        }
-        return $this->_attributes['classMetadataFactoryName'];
+        $this->attributes['mongoCmd'] = $cmd;
     }
 }

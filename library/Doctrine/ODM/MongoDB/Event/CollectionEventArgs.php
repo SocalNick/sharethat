@@ -15,26 +15,38 @@
  * This software consists of voluntary contributions made by many individuals
  * and is licensed under the LGPL. For more information, see
  * <http://www.doctrine-project.org>.
- */
+*/
 
-namespace Doctrine\ODM\MongoDB\Id;
+namespace Doctrine\ODM\MongoDB\Event;
 
-use Doctrine\ODM\MongoDB\DocumentManager;
-use Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
+use Doctrine\Common\EventArgs;
 
 /**
- * AutoGenerator generates a native MongoId
+ * Collection event args
  *
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
  * @link        www.doctrine-project.com
  * @since       1.0
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  */
-class AutoGenerator extends AbstractIdGenerator
+class CollectionEventArgs extends EventArgs
 {
-    /** @inheritDoc */
-    public function generate(DocumentManager $dm, $document)
+    private $invoker;
+    private $data;
+
+    public function __construct($invoker, &$data)
     {
-        return new \MongoId();
+        $this->invoker = $invoker;
+        $this->data = $data;
+    }
+
+    public function getInvoker()
+    {
+        return $this->invoker;
+    }
+
+    public function getData()
+    {
+        return $this->data;
     }
 }

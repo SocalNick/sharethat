@@ -17,28 +17,27 @@
  * <http://www.doctrine-project.org>.
 */
 
-namespace Doctrine\MongoDB\Event;
+namespace Doctrine\ODM\MongoDB\Event;
 
 use Doctrine\Common\EventArgs;
 
 /**
- * Update event args.
+ * Collection update event args
  *
  * @license     http://www.opensource.org/licenses/lgpl-license.php LGPL
  * @link        www.doctrine-project.com
  * @since       1.0
  * @author      Jonathan H. Wage <jonwage@gmail.com>
  */
-class UpdateEventArgs extends EventArgs
+class CollectionUpdateEventArgs extends CollectionEventArgs
 {
     private $invoker;
-    private $query = array();
-    private $newObj = array();
+    private $data;
 
-    public function __construct($invoker, &$query, &$newObj)
+    public function __construct($invoker, &$criteria, &$newObj)
     {
         $this->invoker = $invoker;
-        $this->query = $query;
+        $this->criteria = $criteria;
         $this->newObj = $newObj;
     }
 
@@ -47,9 +46,9 @@ class UpdateEventArgs extends EventArgs
         return $this->invoker;
     }
 
-    public function getQuery()
+    public function getCriteria()
     {
-        return $this->query;
+        return $this->criteria;
     }
 
     public function getNewObj()

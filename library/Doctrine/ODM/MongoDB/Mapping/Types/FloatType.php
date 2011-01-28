@@ -32,21 +32,11 @@ class FloatType extends Type
 {
     public function convertToDatabaseValue($value)
     {
-        return $value !== null ? (float) $value : null;
+        return (float) $value;
     }
 
     public function convertToPHPValue($value)
     {
-        return $value !== null ? (float) $value : null;
-    }
-
-    public function closureToMongo()
-    {
-        return '$return = (float) $value;';
-    }
-
-    public function closureToPHP()
-    {
-        return '$return = (float) $value;';
+        return (float) $value;
     }
 }

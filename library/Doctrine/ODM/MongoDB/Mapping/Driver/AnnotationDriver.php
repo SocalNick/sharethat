@@ -118,7 +118,7 @@ class AnnotationDriver implements Driver
         }
 
         if (isset($documentAnnot->db)) {
-            $class->setDatabase($documentAnnot->db);
+            $class->setDB($documentAnnot->db);
         }
         if (isset($documentAnnot->collection)) {
             $class->setCollection($documentAnnot->collection);
@@ -186,14 +186,6 @@ class AnnotationDriver implements Driver
                 $mapping['notSaved'] = true;
             }
 
-            if ($versionAnnot = $this->reader->getPropertyAnnotation($property, 'Doctrine\ODM\MongoDB\Mapping\Version')) {
-                $mapping['version'] = true;
-            }
-
-            if ($versionAnnot = $this->reader->getPropertyAnnotation($property, 'Doctrine\ODM\MongoDB\Mapping\Lock')) {
-                $mapping['lock'] = true;
-            }
-
             $indexes = $this->reader->getPropertyAnnotation($property, 'Doctrine\ODM\MongoDB\Mapping\Indexes');
             $indexes = $indexes ? $indexes : array();
             if ($index = $this->reader->getPropertyAnnotation($property, 'Doctrine\ODM\MongoDB\Mapping\Index')) {
@@ -202,21 +194,25 @@ class AnnotationDriver implements Driver
             if ($index = $this->reader->getPropertyAnnotation($property, 'Doctrine\ODM\MongoDB\Mapping\UniqueIndex')) {
                 $indexes[] = $index;
             }
-            foreach ($this->reader->getPropertyAnnotations($property) as $fieldAnnot) {
-                if ($fieldAnnot instanceof \Doctrine\ODM\MongoDB\Mapping\Field) {
-                    $mapping = array_merge($mapping, (array) $fieldAnnot);
-                    $class->mapField($mapping);
-                }
-            }
             if ($indexes) {
                 foreach ($indexes as $index) {
-                    $name = isset($mapping['name']) ? $mapping['name'] : $mapping['fieldName'];
                     $keys = array();
-                    $keys[$name] = 'asc';
+                    $keys[$mapping['fieldName']] = 'asc';
                     if (isset($index->order)) {
-                        $keys[$name] = $index->order;
+                        $keys[$mapping['fieldName']] = $index->order;
                     }
                     $this->addIndex($class, $index, $keys);
+                }
+            }
+
+            foreach ($this->reader->getPropertyAnnotations($property) as $fieldAnnot) {
+                if ($fieldAnnot instanceof \Doctrine\ODM\MongoDB\Mapping\Field) {
+                    if ($fieldAnnot instanceof \Doctrine\ODM\MongoDB\Mapping\Id && $fieldAnnot->custom) {
+                        $fieldAnnot->type = 'custom_id';
+                        $class->setAllowCustomId(true);
+                    }
+                    $mapping = array_merge($mapping, (array) $fieldAnnot);
+                    $class->mapField($mapping);
                 }
             }
         }
@@ -237,35 +233,35 @@ class AnnotationDriver implements Driver
                     $annotations = $this->reader->getMethodAnnotations($method);
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PrePersist'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::prePersist);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::prePersist);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PostPersist'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::postPersist);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::postPersist);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PreUpdate'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::preUpdate);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::preUpdate);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PostUpdate'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::postUpdate);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::postUpdate);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PreRemove'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::preRemove);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::preRemove);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PostRemove'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::postRemove);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::postRemove);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PreLoad'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::preLoad);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::preLoad);
                     }
 
                     if (isset($annotations['Doctrine\ODM\MongoDB\Mapping\PostLoad'])) {
-                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\Events::postLoad);
+                        $class->addLifecycleCallback($method->getName(), \Doctrine\ODM\MongoDB\ODMEvents::postLoad);
                     }
                 }
             }

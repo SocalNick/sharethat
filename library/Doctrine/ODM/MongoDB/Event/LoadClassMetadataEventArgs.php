@@ -20,8 +20,7 @@
 namespace Doctrine\ODM\MongoDB\Event;
 
 use Doctrine\Common\EventArgs,
-    Doctrine\ODM\MongoDB\Mapping\ClassMetadata,
-    Doctrine\ODM\MongoDB\DocumentManager;
+    Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
 
 /**
  * Class that holds event arguments for a loadMetadata event.
@@ -36,21 +35,13 @@ class LoadClassMetadataEventArgs extends EventArgs
 {
     private $classMetadata;
 
-    private $dm;
-
-    public function __construct(ClassMetadata $classMetadata, DocumentManager $dm)
+    public function __construct(ClassMetadata $classMetadata)
     {
         $this->classMetadata = $classMetadata;
-        $this->dm = $dm;
     }
 
     public function getClassMetadata()
     {
         return $this->classMetadata;
-    }
-
-    public function getDocumentManager()
-    {
-        return $this->dm;
     }
 }
