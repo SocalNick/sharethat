@@ -738,7 +738,7 @@ class DoctrineContainer
     private function startODMDocumentManager(array $config = array())
     {
         return \Doctrine\ODM\MongoDB\DocumentManager::create(
-            $this->getMongoDBConnection($config['connection']),
+            new \Doctrine\ODM\MongoDB\Mongo(),
             $this->startODMConfiguration($config)
         );
     }
@@ -804,6 +804,7 @@ class DoctrineContainer
      */
     private function startODMConfiguration(array $config = array())
     {
+        /* @var $configuration \Doctrine\ODM\MongoDB\Configuration */
         $configClass = $config['configurationClass'];
         $configuration = new $configClass();
 
@@ -820,29 +821,36 @@ class DoctrineContainer
         );
         $configuration->setProxyNamespace($config['proxy']['namespace']);
         $configuration->setProxyDir($config['proxy']['dir']);
+        
+        $readerClass = $config['metadataDrivers'][0]['annotationReaderClass'];
+        $reader = new $readerClass;
+        $reader->setDefaultAnnotationNamespace('Doctrine\ODM\MongoDB\Mapping\\');
+        $annotationDriverClass = $config['metadataDrivers'][0]['adapterClass'];
+        $configuration->setMetadataDriverImpl(new $annotationDriverClass($reader, $config['metadataDrivers'][0]['mappingDirs'][0]));
+        
 
-        // Cache configuration
-        $configuration->setMetadataCacheImpl($this->getCacheInstance($config['metadataCache']));
-//        $configuration->setResultCacheImpl($this->getCacheInstance($config['resultCache']));
-//        $configuration->setQueryCacheImpl($this->getCacheInstance($config['queryCache']));
-
-        // Metadata configuration
-        $configuration->setMetadataDriverImpl($this->startODMMetadata($config['metadataDrivers']));
-
-        // DQL Functions configuration
-        $dqlFunctions = $config['DQLFunctions'];
-
-        foreach ($dqlFunctions['datetime'] as $name => $className) {
-            $configuration->addCustomDatetimeFunction($name, $className);
-        }
-
-        foreach ($dqlFunctions['numeric'] as $name => $className) {
-            $configuration->addCustomNumericFunction($name, $className);
-        }
-
-        foreach ($dqlFunctions['string'] as $name => $className) {
-            $configuration->addCustomStringFunction($name, $className);
-        }
+//        // Cache configuration
+//        $configuration->setMetadataCacheImpl($this->getCacheInstance($config['metadataCache']));
+////        $configuration->setResultCacheImpl($this->getCacheInstance($config['resultCache']));
+////        $configuration->setQueryCacheImpl($this->getCacheInstance($config['queryCache']));
+//
+//        // Metadata configuration
+//        $configuration->setMetadataDriverImpl($this->startODMMetadata($config['metadataDrivers']));
+//
+//        // DQL Functions configuration
+//        $dqlFunctions = $config['DQLFunctions'];
+//
+//        foreach ($dqlFunctions['datetime'] as $name => $className) {
+//            $configuration->addCustomDatetimeFunction($name, $className);
+//        }
+//
+//        foreach ($dqlFunctions['numeric'] as $name => $className) {
+//            $configuration->addCustomNumericFunction($name, $className);
+//        }
+//
+//        foreach ($dqlFunctions['string'] as $name => $className) {
+//            $configuration->addCustomStringFunction($name, $className);
+//        }
 
         return $configuration;
     }
