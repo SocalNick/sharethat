@@ -33,6 +33,7 @@ class Application_Model_AuthenticationService
         /** NEEDS TO BE IMPLEMENTED **/
         
         // Store all user details except password in authentication session
+        $currentUser = null;
         $auth->getStorage()->write($currentUser);
         return $authResult;
     }
