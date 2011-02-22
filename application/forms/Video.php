@@ -75,6 +75,16 @@ class Application_Form_Video extends Zend_Form
         );
         $this->setDefaults($values);
     }
+    
+    public function setDefaultsFromDocument(\ShareThat\Document\Video $video)
+    {
+        $values = array(
+            'id' => $video->getId(),
+            'name' => $video->getName(),
+            'shortName' => $video->getShortName(),
+        );
+        $this->setDefaults($values);
+    }
 
 
 }

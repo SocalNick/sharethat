@@ -9,9 +9,9 @@ class VideoController extends Zend_Controller_Action
     protected $doctrine;
 
     /**
-     * @var Doctrine\ORM\EntityManager
+     * @var Doctrine\ODM\MongoDB\DocumentManager
      */
-    protected $entityManager;
+    protected $documentManager;
 
     /**
      * @var ShareThat\Entity\Repository\VideoRepository
@@ -21,8 +21,8 @@ class VideoController extends Zend_Controller_Action
     public function init()
     {
         $this->doctrine = Zend_Registry::get('doctrine');
-        $this->entityManager = $this->doctrine->getEntityManager();
-        $this->videoRepository = $this->entityManager->getRepository('\ShareThat\Entity\Video');
+        $this->documentManager = $this->doctrine->getDocumentManager();
+        $this->videoRepository = $this->documentManager->getRepository('\ShareThat\Document\Video');
     }
 
     public function indexAction()
@@ -42,11 +42,16 @@ class VideoController extends Zend_Controller_Action
         $form = new Application_Form_Video();
 
         if ($this->getRequest()->isPost() && $form->isValid($_POST)) {
-            $video = new \ShareThat\Entity\Video();
+            $video = new \ShareThat\Document\Video();
 
-            $this->videoRepository->saveVideo($video, $form->getValues());
+//            $this->videoRepository->saveVideo($video, $form->getValues());
+            $values = $form->getValues();
+            $video->setName($values['name']);
+            $video->setShortName($values['shortName']);
+        
+            $this->documentManager->persist($video);
 
-            $this->entityManager->flush();
+            $this->documentManager->flush();
     
             $this->_helper->flashMessenger->addMessage('Video saved.');
             
@@ -64,9 +69,12 @@ class VideoController extends Zend_Controller_Action
             throw new Exception('Id must be provided for the delete action');
         }
 
-        $this->videoRepository->removeVideo($id);
+//        $this->videoRepository->removeVideo($id);
+        $proxy = $this->documentManager->getReference('\ShareThat\Document\Video', $id);
+
+        $this->documentManager->remove($proxy);
         
-        $this->entityManager->flush();
+        $this->documentManager->flush();
 
         $this->_helper->flashMessenger->addMessage('Video deleted.');
         
@@ -83,19 +91,26 @@ class VideoController extends Zend_Controller_Action
             throw new Exception('Id must be provided for the edit action');
         }
     
-        $video = $this->videoRepository->findOneBy(array('id' => $id));
+//        $video = $this->videoRepository->findOneBy(array('id' => $id));
+        $video = $this->documentManager->find('\ShareThat\Document\Video', $id);
 
         if ($this->getRequest()->isPost() && $form->isValid($_POST)) {
-            $this->videoRepository->saveVideo($video, $form->getValues());
+//            $this->videoRepository->saveVideo($video, $form->getValues());
+            $values = $form->getValues();
+            $video->setName($values['name']);
+            $video->setShortName($values['shortName']);
             
-            $this->entityManager->flush();
+            $this->documentManager->persist($video);
+            
+            
+            $this->documentManager->flush();
     
             $this->_helper->flashMessenger->addMessage('Video saved.');
             
             return $this->_redirect('/video/list');
         }
 
-        $form->setDefaultsFromEntity($video); // pass values to form
+        $form->setDefaultsFromDocument($video); // pass values to form
 
         $this->view->form = $form;
     }
