@@ -12,6 +12,7 @@ class ErrorController extends Zend_Controller_Action
             return;
         }
         
+        $logAdditionalMessage = '';
         switch ($errors->type) {
             case Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_ROUTE:
             case Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_CONTROLLER:
@@ -20,6 +21,7 @@ class ErrorController extends Zend_Controller_Action
                 // 404 error -- controller or action not found
                 $this->getResponse()->setHttpResponseCode(404);
                 $this->view->message = 'Page not found';
+                $logAdditionalMessage = ' - ' . $this->getRequest()->getServer('REQUEST_URI');
                 break;
             default:
                 // application error
@@ -30,7 +32,7 @@ class ErrorController extends Zend_Controller_Action
         
         // Log exception, if logger available
         if (false !== ($log = $this->getLog())) {
-            $log->crit($this->view->message, $errors->exception);
+            $log->crit($this->view->message . $logAdditionalMessage, $errors->exception);
         }
         
         // conditionally display exceptions

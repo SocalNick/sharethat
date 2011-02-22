@@ -99,6 +99,8 @@ class VideoController extends Zend_Controller_Action
             $values = $form->getValues();
             $video->setName($values['name']);
             $video->setShortName($values['shortName']);
+            $video->setUrl($values['url']);
+            $video->setStatus($values['status']);
             
             $this->documentManager->persist($video);
             
