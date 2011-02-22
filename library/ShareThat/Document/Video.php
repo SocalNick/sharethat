@@ -7,6 +7,9 @@ namespace ShareThat\Document;
  */
 class Video
 {
+    const STATUS_DRAFT = 1;
+    const STATUS_PENDING = 2;
+    const STATUS_PUBLISHED = 3;
 
     /**
      * @Id
@@ -25,6 +28,18 @@ class Video
      * @var string
      */
     protected $shortName;
+    
+    /**
+     * @String
+     * @var string
+     */
+    protected $url;
+    
+    /**
+     * @Int
+     * @var integer
+     */
+    protected $status;
     
 	/**
      * Get id
@@ -74,5 +89,45 @@ class Video
     public function getShortName()
     {
         return $this->shortName;
+    }
+    
+	/**
+     * Set URL
+     *
+     * @param string $url
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
+    }
+
+    /**
+     * Get URL
+     *
+     * @return string $url
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+    
+	/**
+     * Set status
+     *
+     * @param string $status
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
+
+    /**
+     * Get status
+     *
+     * @return string $status
+     */
+    public function getStatus()
+    {
+        return $this->status;
     }
 }
