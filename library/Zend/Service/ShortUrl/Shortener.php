@@ -29,17 +29,17 @@ interface Zend_Service_ShortUrl_Shortener
 {
     /**
      * This function shortens long url
-     * 
+     *
      * @param  string $url URL to Shorten
      * @return string Shortened Url
      */
-    function shorten($shortenedUrl);
-    
+    public function shorten($shortenedUrl);
+
     /**
      * Reveals target for short URL
      *
      * @param  string $shortenedUrl URL to reveal target of
      * @return string Unshortened Url
      */
-    function unshorten($shortenedUrl);
+    public function unshorten($shortenedUrl);
 }

@@ -16,7 +16,7 @@
  * @package    Zend_Controller
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Http.php 23228 2010-10-25 14:15:35Z matthew $
+ * @version    $Id: Http.php 23484 2010-12-10 03:57:59Z mjh_ca $
  */
 
 /** @see Zend_Controller_Request_Abstract */
@@ -551,7 +551,7 @@ class Zend_Controller_Request_Http extends Zend_Controller_Request_Abstract
             $this->setBaseUrl();
         }
 
-        return $this->_baseUrl;
+        return urldecode($this->_baseUrl);
     }
 
     /**
@@ -623,17 +623,19 @@ class Zend_Controller_Request_Http extends Zend_Controller_Request_Abstract
                 $requestUri = substr($requestUri, 0, $pos);
             }
 
+            $requestUri = urldecode($requestUri);
+
             if (null !== $baseUrl
-                && ((!empty($baseUrl) && 0 === strpos($requestUri, $baseUrl)) 
+                && ((!empty($baseUrl) && 0 === strpos($requestUri, $baseUrl))
                     || empty($baseUrl))
                     && false === ($pathInfo = substr($requestUri, strlen($baseUrl)))
-            ){ 
-                // If substr() returns false then PATH_INFO is set to an empty string 
+            ){
+                // If substr() returns false then PATH_INFO is set to an empty string
                 $pathInfo = '';
-            } elseif (null === $baseUrl 
+            } elseif (null === $baseUrl
                     || (!empty($baseUrl) && false === strpos($requestUri, $baseUrl))
-            ) { 
-                $pathInfo = $requestUri; 
+            ) {
+                $pathInfo = $requestUri;
             }
         }
 
@@ -1031,7 +1033,10 @@ class Zend_Controller_Request_Http extends Zend_Controller_Request_Abstract
         $name   = $this->getServer('SERVER_NAME');
         $port   = $this->getServer('SERVER_PORT');
 
-        if (($scheme == self::SCHEME_HTTP && $port == 80) || ($scheme == self::SCHEME_HTTPS && $port == 443)) {
+        if(null === $name) {
+            return '';
+        }
+        elseif (($scheme == self::SCHEME_HTTP && $port == 80) || ($scheme == self::SCHEME_HTTPS && $port == 443)) {
             return $name;
         } else {
             return $name . ':' . $port;

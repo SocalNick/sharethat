@@ -17,7 +17,7 @@
  * @subpackage Zend_Cache_Backend
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Libmemcached.php 23219 2010-10-22 10:21:27Z mabe $
+ * @version    $Id: Libmemcached.php 23220 2010-10-22 10:24:14Z mabe $
  */
 
 

@@ -17,7 +17,7 @@
  * @subpackage Resource
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Session.php 23241 2010-10-26 12:36:53Z matthew $
+ * @version    $Id: Session.php 20814 2010-02-01 20:13:08Z freak $
  */
 
 /**
@@ -50,7 +50,7 @@ class Zend_Application_Resource_Session extends Zend_Application_Resource_Resour
      *
      * @param  array|string|Zend_Session_SaveHandler_Interface $saveHandler
      * @return Zend_Application_Resource_Session
-     * @throws Zend_Application_Resource_Exception When $saveHandler is not a valid save handler
+     * @throws Zend_Application_Resource_Exception When $saveHandler is no valid save handler
      */
     public function setSaveHandler($saveHandler)
     {

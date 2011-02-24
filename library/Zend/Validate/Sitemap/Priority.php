@@ -17,7 +17,7 @@
  * @subpackage Sitemap
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Priority.php 23241 2010-10-26 12:36:53Z matthew $
+ * @version    $Id: Priority.php 22668 2010-07-25 14:50:46Z thomas $
  */
 
 /**
@@ -51,7 +51,7 @@ class Zend_Validate_Sitemap_Priority extends Zend_Validate_Abstract
      * @var array
      */
     protected $_messageTemplates = array(
-        self::NOT_VALID => "'%value%' is not a valid sitemap priority",
+        self::NOT_VALID => "'%value%' is no valid sitemap priority",
         self::INVALID   => "Invalid type given. Numeric string, integer or float expected",
     );
 

@@ -16,7 +16,7 @@
  * @package    Zend_View
  * @subpackage Helper
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
- * @version    $Id: HeadLink.php 23242 2010-10-26 12:38:03Z matthew $
+ * @version    $Id: HeadLink.php 23249 2010-10-26 12:46:47Z matthew $
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 

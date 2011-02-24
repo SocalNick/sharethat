@@ -16,7 +16,7 @@
  * @package    Zend_Amf
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Server.php 23255 2010-10-26 12:50:21Z alexander $
+ * @version    $Id: Server.php 23256 2010-10-26 12:51:54Z alexander $
  */
 
 /** @see Zend_Server_Interface */

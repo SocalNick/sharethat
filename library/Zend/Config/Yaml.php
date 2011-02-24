@@ -16,6 +16,7 @@
  * @package   Zend_Config
  * @copyright Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
+ * @version   $Id: Yaml.php 23651 2011-01-21 21:51:00Z mikaelkael $
  */
 
 /**
@@ -24,7 +25,7 @@
 require_once 'Zend/Config.php';
 
 /**
- * XML Adapter for Zend_Config
+ * YAML Adapter for Zend_Config
  *
  * @category  Zend
  * @package   Zend_Config
@@ -92,7 +93,7 @@ class Zend_Config_Yaml extends Zend_Config
     /**
      * Set callback for decoding YAML
      *
-     * @param  $yamlDecoder the decoder to set
+     * @param  callable $yamlDecoder the decoder to set
      * @return Zend_Config_Yaml
      */
     public function setYamlDecoder($yamlDecoder)

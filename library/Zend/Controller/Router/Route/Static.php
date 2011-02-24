@@ -16,7 +16,7 @@
  * @package    Zend_Controller
  * @subpackage Router
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
- * @version    $Id: Static.php 23208 2010-10-21 16:08:12Z matthew $
+ * @version    $Id: Static.php 23210 2010-10-21 16:10:55Z matthew $
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
