@@ -1,0 +1,20 @@
+<phpunit colors="true" bootstrap="./TestHelper.php">
+    <testsuite name="ShareThat Test Suite">
+        <directory>./</directory>
+    </testsuite>
+
+    <filter>
+        <whitelist>
+            <directory suffix=".php">../library/</directory>
+            <directory suffix=".php">../application/</directory>
+            <exclude>
+                <directory suffix=".phtml">../application/</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+
+    <logging>
+        <log highlowerbound="80" lowupperbound="50" highlight="true" yui="true" charset="UTF-8" target="./log/report" type="coverage-html"></log>
+    </logging>
+ 
+</phpunit>
