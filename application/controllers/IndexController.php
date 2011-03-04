@@ -13,9 +13,8 @@ class IndexController extends Zend_Controller_Action
         $this->_redirect('/video');
     }
 
+    public function testAction ()
+    {
+    }
+
 }
-
-
-
-
-
