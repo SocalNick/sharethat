@@ -1,55 +1,50 @@
 <?php
 
-class ErrorController extends Zend_Controller_Action
+use Zend\Debug;
+class ErrorController extends Zend\Controller\Action
 {
 
     public function errorAction()
     {
         $errors = $this->_getParam('error_handler');
         
-        if (!$errors) {
-            $this->view->message = 'You have reached the error page';
-            return;
-        }
-        
-        $logAdditionalMessage = '';
         switch ($errors->type) {
-            case Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_ROUTE:
-            case Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_CONTROLLER:
-            case Zend_Controller_Plugin_ErrorHandler::EXCEPTION_NO_ACTION:
+            case \Zend\Controller\Plugin\ErrorHandler::EXCEPTION_NO_ROUTE:
+            case \Zend\Controller\Plugin\ErrorHandler::EXCEPTION_NO_CONTROLLER:
+            case \Zend\Controller\Plugin\ErrorHandler::EXCEPTION_NO_ACTION:
         
                 // 404 error -- controller or action not found
                 $this->getResponse()->setHttpResponseCode(404);
-                $this->view->message = 'Page not found';
-                $logAdditionalMessage = ' - ' . $this->getRequest()->getServer('REQUEST_URI');
+                $this->view->vars()->message = 'Page not found';
                 break;
             default:
                 // application error
                 $this->getResponse()->setHttpResponseCode(500);
-                $this->view->message = 'Application error';
+                $this->view->vars()->message = 'Application error';
                 break;
         }
         
         // Log exception, if logger available
-        if (false !== ($log = $this->getLog())) {
-            $log->crit($this->view->message . $logAdditionalMessage, $errors->exception);
+        if (($log = $this->getLog())) {
+            $log->crit($this->view->vars()->message, $errors->exception);
         }
         
         // conditionally display exceptions
         if ($this->getInvokeArg('displayExceptions') == true) {
-            $this->view->exception = $errors->exception;
+            $this->view->vars()->exception = $errors->exception;
         }
         
-        $this->view->request   = $errors->request;
+        $this->view->vars()->request = $errors->request;
     }
 
     public function getLog()
     {
+        /* @var $bootstrap Bootstrap */
         $bootstrap = $this->getInvokeArg('bootstrap');
-        if (!$bootstrap->hasResource('Log')) {
+        $log = $bootstrap->getResource('Log');
+        if (is_null($bootstrap)) {
             return false;
         }
-        $log = $bootstrap->getResource('Log');
         return $log;
     }
 

@@ -1,21 +1,21 @@
 <?php
 
 $videos = $this->videos;
-
+$urlHelper = $this->broker('url');
 ?>
 
 <p>
-    <a href="<?php echo $this->url(array('action' => 'create')); ?>">Add New Video</a>
+    <a href="<?php echo $urlHelper->direct(array('action' => 'create')); ?>">Add New Video</a>
 </p>
 
 
 <?php if ($videos): foreach ($videos as $video): ?>
     ID<?php echo $video->getId() ?>: 
-    <a href="<?php echo $this->url(array('action' => 'edit', 'id' => $video->getId())); ?>">
+    <a href="<?php echo $urlHelper->direct(array('action' => 'edit', 'id' => $video->getId())); ?>">
         <?php echo $video->getName(); ?>
     </a>
     - 
-    <a href="<?php echo $this->url(array('action' => 'delete', 'id' => $video->getId())); ?>">
+    <a href="<?php echo $urlHelper->direct(array('action' => 'delete', 'id' => $video->getId())); ?>">
         delete
     </a>
     <br />
