@@ -10,11 +10,11 @@ $welcome = 'Welcome <span class="bold">' . $username . '</span>';
 
 if (isset($this->user)) {
     $welcome .= ' - <a href="' 
-        . $this->url(array('controller' => 'auth', 'action' => 'logout'), null, true)
+        . $this->broker('url')->direct(array('controller' => 'auth', 'action' => 'logout'), null, true)
         . '">logout</a>';
 } else {
     $welcome .= ' - <a href="' 
-        . $this->url(array('controller' => 'auth', 'action' => 'login'), null, true)
+        . $this->broker('url')->direct(array('controller' => 'auth', 'action' => 'login'), null, true)
         . '">login</a>';
 }
 

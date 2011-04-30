@@ -2,13 +2,6 @@
 
 class Bootstrap extends \Zend\Application\Bootstrap
 {
-
-//    protected function _initDoctype()
-//    {
-//        $this->bootstrap('view');
-//        $view = $this->getResource('view');
-//        $view->doctype('HTML5');
-//    }
     
 //    protected function _initAuth()
 //    {
