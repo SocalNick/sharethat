@@ -156,6 +156,7 @@ class DoctrineContainer
      */
     private function prepareDBALConfiguration(array $config = array())
     {
+        //TODO: this should probably be optional or separate dbal and orm from mongodb and odm
         $dbalConfig = $config['dbal'];
         $defaultConnectionName = isset($dbalConfig['defaultConnection'])
             ? $dbalConfig['defaultConnection'] : $this->defaultConnection;

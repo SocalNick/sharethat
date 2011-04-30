@@ -18,8 +18,7 @@
  * <http://www.doctrine-project.org>.
  */
 
-// Zend Framework cannot deal with Resources using namespaces
-//namespace Bisna\Application\Resource;
+namespace Bisna\Application\Resource;
 
 use Bisna\Application\Container;
 
@@ -31,7 +30,7 @@ use Bisna\Application\Container;
  *
  * @author Guilherme Blanco <guilhermeblanco@hotmail.com>
  */
-class Bisna_Application_Resource_Doctrine extends \Zend_Application_Resource_ResourceAbstract
+class Doctrine extends \Zend\Application\Resource\AbstractResource implements \Zend\Application\Resource
 {
     /**
      * Initializes Doctrine Context.
@@ -43,13 +42,13 @@ class Bisna_Application_Resource_Doctrine extends \Zend_Application_Resource_Res
         $config = $this->getOptions();
         
         // Bootstrapping Doctrine autoloaders
-        $this->registerAutoloaders($config);
+//        $this->registerAutoloaders($config);
         
         // Starting Doctrine container
         $container = new Container\DoctrineContainer($config);
 
         // Add to Zend Registry
-        \Zend_Registry::set('doctrine', $container);
+        \Zend\Registry::set('doctrine', $container);
 
         return $container;
     }
