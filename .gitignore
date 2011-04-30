@@ -2,4 +2,6 @@
 .project
 .settings
 data
+data/log
+data/session
 library/ShareThat/Document/Proxy
