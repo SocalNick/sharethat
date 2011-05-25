@@ -21,7 +21,7 @@
                 <?php echo $this->broker('navigation') ?>
             </div>
         </div>
-        <?php echo $this->layout()->content ?>
+        <?php echo $this->broker('layout')->getlayout()->content ?>
     </div>
     <?php echo $this->render('_footer.phtml') ?>
 </div>
